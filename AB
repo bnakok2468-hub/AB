@@ -1,0 +1,148 @@
+-- Roblox UI Script (Luau) สำหรับตัวรันสคริปต์
+-- สามารถคัดลอกโค้ดนี้ไปรันในตัวรัน (Executor) ของคุณได้ทันทีครับ
+
+local CoreGui = game:GetService("CoreGui")
+
+-- ลบ UI เก่าทิ้งก่อน (ถ้ามี)
+if CoreGui:FindFirstChild("LinkModifierUI") then
+    CoreGui["LinkModifierUI"]:Destroy()
+end
+
+-- สร้าง ScreenGui หลัก
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "LinkModifierUI"
+ScreenGui.Parent = CoreGui
+
+-- สร้างหน้าต่างหลัก (Frame)
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Size = UDim2.new(0, 300, 0, 420)
+MainFrame.Position = UDim2.new(0.5, -150, 0.5, -210)
+MainFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+MainFrame.BorderSizePixel = 0
+MainFrame.Active = true
+MainFrame.Draggable = true
+MainFrame.Parent = ScreenGui
+
+-- ทำมุมโค้งให้หน้าต่าง
+local UICorner = Instance.new("UICorner")
+UICorner.CornerRadius = UDim.new(0, 8)
+UICorner.Parent = MainFrame
+
+-- ช่องใส่ข้อความ/วางโค้ด (TextBox)
+local TextBox = Instance.new("TextBox")
+TextBox.Name = "CodeBox"
+TextBox.Size = UDim2.new(0, 260, 0, 45)
+TextBox.Position = UDim2.new(0.5, -130, 0, 15)
+TextBox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+TextBox.TextColor3 = Color3.fromRGB(200, 200, 200)
+TextBox.PlaceholderText = "วางโค้ด/ลิงก์ที่นี่..."
+TextBox.Text = ""
+TextBox.TextSize = 14
+TextBox.ClearTextOnFocus = false
+TextBox.Parent = MainFrame
+
+local BoxCorner = Instance.new("UICorner")
+BoxCorner.CornerRadius = UDim.new(0, 6)
+BoxCorner.Parent = TextBox
+
+-- ฟังก์ชันสร้างปุ่มกด
+local function createButton(name, text, color, positionY)
+    local btn = Instance.new("TextButton")
+    btn.Name = name
+    btn.Size = UDim2.new(0, 260, 0, 45)
+    btn.Position = UDim2.new(0.5, -130, 0, positionY)
+    btn.BackgroundColor3 = color
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.Text = text
+    btn.TextSize = 14
+    btn.Font = Enum.Font.SourceSansBold
+    btn.Parent = MainFrame
+    
+    local btnCorner = Instance.new("UICorner")
+    btnCorner.CornerRadius = UDim.new(0, 6)
+    btnCorner.Parent = btn
+    
+    return btn
+end
+
+-- สร้างปุ่มทั้ง 5 ตามแบบในรูป
+local Btn1 = createButton("Btn1", "1. คัดลอกโค้ด", Color3.fromRGB(0, 110, 255), 75)
+local Btn2 = createButton("Btn2", "2. รันโค้ด 1 ครั้ง", Color3.fromRGB(40, 167, 69), 135)
+local Btn3 = createButton("Btn3", "3. บันทึกโค้ด", Color3.fromRGB(90, 90, 90), 195)
+local Btn4 = createButton("Btn4", "4. ประวัติบันทึก", Color3.fromRGB(111, 66, 193), 255)
+local Btn5 = createButton("Btn5", "5. รันรัวๆ: OFF", Color3.fromRGB(220, 53, 69), 315)
+
+-- เก็บประวัติการบันทึก
+local historyList = {}
+local autoRunActive = false
+
+-- ระบบปุ่มที่ 1: คัดลอกข้อความในกล่อง
+Btn1.MouseButton1Click:Connect(function()
+    if setclipboard then
+        setclipboard(TextBox.Text)
+        Btn1.Text = "คัดลอกสำเร็จ!"
+        task.wait(1)
+        Btn1.Text = "1. คัดลอกโค้ด"
+    else
+        Btn1.Text = "Executor ไม่รองรับ"
+        task.wait(1)
+        Btn1.Text = "1. คัดลอกโค้ด"
+    end
+end)
+
+-- ระบบปุ่มที่ 2: รันโค้ด 1 ครั้ง (จำลองการแก้ไขลิงก์)
+Btn2.MouseButton1Click:Connect(function()
+    local currentText = TextBox.Text
+    -- ตัวอย่างการทำงานแก้ไขลิงก์: สมมติแปลงข้อความหรือลิงก์
+    local modifiedText = string.gsub(currentText, "old-domain", "new-domain")
+    TextBox.Text = modifiedText
+    
+    Btn2.Text = "รันสำเร็จ!"
+    task.wait(1)
+    Btn2.Text = "2. รันโค้ด 1 ครั้ง"
+end)
+
+-- ระบบปุ่มที่ 3: บันทึกโค้ดลงประวัติ
+Btn3.MouseButton1Click:Connect(function()
+    if TextBox.Text ~= "" then
+        table.insert(historyList, TextBox.Text)
+        Btn3.Text = "บันทึกแล้ว!"
+        task.wait(1)
+        Btn3.Text = "3. บันทึกโค้ด"
+    end
+end)
+
+-- ระบบปุ่มที่ 4: แสดงประวัติล่าสุด
+Btn4.MouseButton1Click:Connect(function()
+    if #historyList > 0 then
+        TextBox.Text = historyList[#historyList]
+        Btn4.Text = "โหลดประวัติล่าสุด"
+        task.wait(1)
+        Btn4.Text = "4. ประวัติบันทึก"
+    else
+        Btn4.Text = "ยังไม่มีประวัติ"
+        task.wait(1)
+        Btn4.Text = "4. ประวัติบันทึก"
+    end
+end)
+
+-- ระบบปุ่มที่ 5: เปิด/ปิด การรันรัวๆ (Toggle)
+Btn5.MouseButton1Click:Connect(function()
+    autoRunActive = not autoRunActive
+    if autoRunActive then
+        Btn5.Text = "5. รันรัวๆ: ON"
+        Btn5.BackgroundColor3 = Color3.fromRGB(40, 167, 69)
+        
+        -- ลูปทำงานรัวๆ แบบ Background Task
+        task.spawn(function()
+            while autoRunActive do
+                -- โค้ดที่จะให้มันรันอัตโนมัติรัวๆ ตรงนี้
+                task.wait(1)
+            end
+        end)
+    else
+        Btn5.Text = "5. รันรัวๆ: OFF"
+        Btn5.BackgroundColor3 = Color3.fromRGB(220, 53, 69)
+    end
+end)
